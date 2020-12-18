@@ -1,41 +1,66 @@
-import { AuthContext } from '@devblock/react-auth/dist/context';
 import React from 'react';
-import { Provider } from 'react-redux';
-import { Switch } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { authProvider } from 'src/providers/authProvider';
-import useCommonStyles from 'src/themes/styles';
-import { Spinner } from './components/spinner';
-import { store } from './redux/store';
-import AuthenticatedRoute from './routers/authenticatedRoute';
-import { NotFoundRoute } from './routers/notFoundRoute';
-import { RouteName } from './routers/routeName';
-import UnauthenticatedRoute from './routers/unauthenticatedRoute';
+
+import { Switch, Route, Redirect } from 'react-router-dom';
+
+import VerticalLayout from './layout/vertical/Vertical';
+import HorizontalLayout from './layout/horizontal/Horizontal';
+
+import NotFound from './pages/sessions/404';
+import { defaultRoutes, sessionRoutes } from './routing';
+
+import './App.scss';
+import { useHideLoader } from './hooks/useHideLoader';
+
+const Routes = ({ routes, layout = '' }) => (
+  <Switch>
+    {routes.map((route, index) => (
+      <Route
+        key={index}
+        exact={route.exact}
+        path={layout.length > 0 ? `/${layout}/${route.path}` : `/${route.path}\``}
+        component={() => <route.component />}
+      />
+    ))}
+
+    <Route path='*'>
+      <Redirect to='/public/page-404' />
+    </Route>
+  </Switch>
+);
+
+const DefaultRoutes = ({ layout }) => <Routes routes={defaultRoutes} layout={layout} />;
+
+const SessionRoutes = () => <Routes routes={sessionRoutes} layout='public' />;
 
 const App = () => {
-  const classes = useCommonStyles();
+  useHideLoader();
 
   return (
-    <Provider store={store}>
-      <AuthContext.Provider value={{ provider: authProvider }}>
-        <Switch>
-          {/* Put all public routes under this line */}
-          <UnauthenticatedRoute exact path={RouteName.LOGIN} componentPath={'pages/login'} />
+    <Switch>
+      <Route path='/' exact>
+        <Redirect to='/vertical/default-dashboard' />
+      </Route>
 
-          <UnauthenticatedRoute exact path={RouteName.SIGN_UP} componentPath={'pages/signUp'} />
+      <Route path='/public'>
+        <SessionRoutes />
+      </Route>
 
-          {/* Put all authenticated routes under this line */}
-          <AuthenticatedRoute exact path={RouteName.HOME} componentPath={'pages/home'} />
+      <Route path='/horizontal'>
+        <HorizontalLayout>
+          <DefaultRoutes layout='horizontal' />
+        </HorizontalLayout>
+      </Route>
 
-          <NotFoundRoute />
-        </Switch>
+      <Route path='/vertical'>
+        <VerticalLayout>
+          <DefaultRoutes layout='vertical' />
+        </VerticalLayout>
+      </Route>
 
-        <ToastContainer className={classes.toastify} />
-      </AuthContext.Provider>
-
-      <Spinner />
-    </Provider>
+      <Route path='*'>
+        <NotFound />
+      </Route>
+    </Switch>
   );
 };
 
