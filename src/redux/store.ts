@@ -1,18 +1,24 @@
-import { applyMiddleware, combineReducers, createStore } from 'redux';
+import { createStore, combineReducers, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
-import * as reducers from './reducers';
-import { RootState } from './types';
-import { PersistConfig, persistReducer, persistStore } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
 
-const persistConfig: PersistConfig<any> = {
-  key: 'tag-card-grading',
-  storage,
-  whitelist: ['localUserDataReducer'],
-};
+import { connectRouter } from 'connected-react-router';
+import { createHashHistory } from 'history';
 
-const appReducer = combineReducers<RootState>(reducers);
-const persistedReducer = persistReducer(persistConfig, appReducer);
+import { settingsReducer } from './settings/reducer';
+import { pageDataReducer } from './page-data/reducer';
+import { patientsReducer } from './patients/reducer';
 
-export const store = createStore(persistedReducer, applyMiddleware(thunk));
-export const persistor = persistStore(store);
+export const history = createHashHistory({
+  hashType: 'slash'
+});
+
+const rootReducer = combineReducers({
+  pageData: pageDataReducer,
+  settings: settingsReducer,
+  patients: patientsReducer,
+  router: connectRouter(history)
+});
+
+export type AppState = ReturnType<typeof rootReducer>;
+
+export const store = createStore(rootReducer, applyMiddleware(thunk));
